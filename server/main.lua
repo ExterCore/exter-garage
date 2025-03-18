@@ -730,11 +730,7 @@ CreateCallback('exter-garage:server:canDeposit', function(source, cb, plate, typ
     if isVehicleOwned(src, plate) == false and isVehicleOwned2(src, plate) == false then
         return cb(false)
     end
-    --if type == 'house' and not exports['qb-houses']:hasKey(Player.PlayerData.license, citizenId, Config.Garages[garage].houseName) then
-    --    cb(false)
-    --    return
-    --end
-    if type == 'street' and not exports['ps-housing']:hasKey(Player.PlayerData.license, citizenId, Config.Garages[garage].houseName) then
+    if type == 'house' and not exports['qb-houses']:hasKey(Player.PlayerData.license, citizenId, Config.Garages[garage].houseName) then
         cb(false)
         return
     end
