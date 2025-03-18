@@ -1,140 +1,75 @@
+# Exter-Garage
+
+Exter-Garage is an advanced **QBCore-based** garage system designed for **FiveM**, providing a seamless vehicle storage and retrieval experience for players. This script ensures efficient and immersive garage management, supporting multiple garage types and configurations.
+
+## 🎯 Key Features
+- 🚗 **QBCore Integration** - Fully compatible with the **QBCore** framework.
+- 🏠 **Multiple Garage Types** - Supports private, public, and job-based garages.
+- 🔄 **Vehicle Storage & Retrieval** - Allows players to store and retrieve their vehicles smoothly.
+- 🔧 **Customizable Configurations** - Easily adjustable settings for garages, fees, and vehicle storage limits.
+- 🛠️ **Optimized Performance** - Designed to minimize performance impact on the server.
+- 🎨 **Modern UI Design** - A clean and responsive user interface.
+
+## 📦 Installation
+
+1. Download or clone the repository:
+   ```sh
+   git clone https://github.com/ExterCore/exter-garage.git
+   ```
+2. Move the `exter-garage` folder to the `[resources]` directory in your FiveM server.
+3. Add the resource to your `server.cfg`:
+   ```cfg
+   ensure exter-garage
+   ```
+4. Restart your server and verify that the script is running correctly.
+
+## ⚙️ Configuration
+
+All settings can be modified in the **config.lua** file.
+
+- **Adding a New Garage:**
+  ```lua
+  Config.Garages = {
+      ["downtown"] = {
+          name = "Downtown Garage",
+          type = "public",
+          coords = vector3(215.8, -810.1, 30.7),
+          spawnPoints = {
+              {coords = vector4(220.5, -798.9, 30.5, 180.0)}
+          }
+      }
+  }
+  ```
+- **Setting Garage Fees & Restrictions:**
+  Adjust fees and storage limits based on your server’s economy and balance.
+
+## 📌 Requirements
+- **[QBCore Framework](https://github.com/qbcore-framework)**
+- **[Ox Inventory](https://github.com/overextended/ox_inventory) (Optional, if using an additional inventory system)**
+- **[qb-garages (Legacy Version)](https://github.com/qbcore-framework/qb-garages) (Base compatibility)**
+- **[cdn-fuel](https://github.com/cdn-fuel) (Required for fuel tracking)**
+
+## 🛠️ Usage
+- Players can store and retrieve vehicles at designated garages.
+- Vehicle conditions, fuel levels, and damages are saved persistently.
+- Different garage types (private, public, job-based) can be assigned as needed.
+
+## 💡 Inspiration
+This project was inspired by **various FiveM garage scripts**, with improvements tailored for the **ExterCore** ecosystem to enhance user experience and server performance.
+
+## 📜 License
+This project is licensed under the **MIT License**. See the `LICENSE` file for details.
+
+## 🤝 Contributions
+Contributions are welcome! To contribute:
+1. Fork this repository.
+2. Create a new branch (`feature-branch`).
+3. Implement your changes and commit them.
+4. Submit a Pull Request.
+
+## 📞 Support
+For issues or questions, open an **issue** in this repository or connect with the ExterCore community.
+
 ---
-description: exter-garage - Renewed Phone Documentation
----
+Created with ❤️ by [ExterCore](https://github.com/ExterCore).
 
-# Installation
-## How to use?
-
-## Step 1 | Open the Renewed phone file and find the server folder in it, then find the garage.lua file and replace it with the following code. Go to step 2.
-```lua
-local QBCore = exports['qb-core']:GetCoreObject()
-
-RegisterNetEvent('qb-phone:server:sendVehicleRequest', function(data)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    local Asshole = tonumber(data.id)
-    local OtherAsshole = QBCore.Functions.GetPlayer(Asshole)
-
-    if not OtherAsshole then return TriggerClientEvent("QBCore:Notify", src, 'State ID does not exist!', "error") end
-    if not data.price or not data.plate then return end
-    if Player.PlayerData.citizenid == OtherAsshole.PlayerData.citizenid then return TriggerClientEvent("QBCore:Notify", src, 'You cannot sell a vehicle to yourself!', "error") end
-
-    TriggerClientEvent('qb-phone:client:sendVehicleRequest', Asshole, data, Player)
-end)
-
-RegisterNetEvent('qb-phone:server:sellVehicle', function(data, Seller, type)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    local SellerData = QBCore.Functions.GetPlayerByCitizenId(Seller.PlayerData.citizenid)
-
-    if type == 'accepted' then
-        if Player.PlayerData.money.bank and Player.PlayerData.money.bank >= tonumber(data.price) then
-            Player.Functions.RemoveMoney('bank', data.price, "vehicle sale")
-            SellerData.Functions.AddMoney('bank', data.price)
-            TriggerClientEvent('qb-phone:client:CustomNotification', src, "VEHICLE SALE", "You purchased the vehicle for $"..data.price, "fas fa-chart-line", "#D3B300", 5500)
-            TriggerClientEvent('qb-phone:client:CustomNotification', Seller.PlayerData.source, "VEHICLE SALE", "Your vehicle was successfully purchased!", "fas fa-chart-line", "#D3B300", 5500)
-            MySQL.update('UPDATE player_vehicles SET citizenid = ?, garage = ?, state = ? WHERE plate = ?',{Player.PlayerData.citizenid, Config.SellGarage, 1, data.plate})
-            -- Update Garages
-            TriggerClientEvent('qb-phone:client:updateGarages', src)
-            TriggerClientEvent('qb-phone:client:updateGarages', Seller.PlayerData.source)
-        else
-            TriggerClientEvent('qb-phone:client:CustomNotification', src, "VEHICLE SALE", "Insufficient Funds", "fas fa-chart-line", "#D3B300", 5500)
-            TriggerClientEvent('qb-phone:client:CustomNotification', Seller.PlayerData.source, "VEHICLE SALE", "Your vehicle was not purchased!", "fas fa-chart-line", "#D3B300", 5500)
-        end
-    elseif type == 'denied' then
-        TriggerClientEvent('qb-phone:client:CustomNotification', src, "VEHICLE SALE", "Request denied", "fas fa-chart-line", "#D3B300", 5500)
-        TriggerClientEvent('qb-phone:client:CustomNotification', Seller.PlayerData.source, "VEHICLE SALE", "Your sale request was denied!", "fas fa-chart-line", "#D3B300", 5500)
-    end
-end)
-
-local function round(num, numDecimalPlaces)
-    return tonumber(string.format("%." .. (numDecimalPlaces or 0) .. "f", num))
-end
-
-QBCore.Functions.CreateCallback('qb-phone:server:GetGarageVehicles', function(source, cb)
-    local Player = QBCore.Functions.GetPlayer(source)
-    local Vehicles = {}
-    local vehdata
-    local result = exports.oxmysql:executeSync('SELECT * FROM player_vehicles WHERE citizenid = ?', {Player.PlayerData.citizenid})
-    if result[1] then
-        Config.Garages = exports["exter-garage"]:getGarages()
-        for _, v in pairs(result) do
-            local VehicleData = QBCore.Shared.Vehicles[v.vehicle]
-            local VehicleGarage = "None"
-            local enginePercent = round(v.engine / 10, 0)
-            local bodyPercent = round(v.body / 10, 0)
-            if v.garage then
-                if Config.Garages[v.garage] then
-                    VehicleGarage = Config.Garages[v.garage]["label"]
-                else
-                    VehicleGarage = v.garage
-                end
-            end
-
-            local VehicleState = "In"
-            if v.state == 0 then
-                VehicleState = "Out"
-            elseif v.state == 2 then
-                VehicleState = "Impounded"
-            end
-            if VehicleData then
-                if VehicleData["brand"] then
-                    vehdata = {
-                        fullname = VehicleData["brand"] .. " " .. VehicleData["name"],
-                        brand = VehicleData["brand"],
-                        model = VehicleData["name"],
-                        plate = v.plate,
-                        garage = VehicleGarage,
-                        state = VehicleState,
-                        fuel = v.fuel,
-                        engine = enginePercent,
-                        body = bodyPercent,
-                        paymentsleft = v.paymentsleft
-                    }
-                else
-                    vehdata = {
-                        fullname = VehicleData["name"],
-                        brand = VehicleData["name"],
-                        model = VehicleData["name"],
-                        plate = v.plate,
-                        garage = VehicleGarage,
-                        state = VehicleState,
-                        fuel = v.fuel,
-                        engine = enginePercent,
-                        body = bodyPercent,
-                        paymentsleft = v.paymentsleft
-                    }
-                end
-            else
-                vehdata = {
-                    fullname = v.vehicle,
-                    brand = "Unknown",
-                    model = v.vehicle,
-                    plate = v.plate,
-                    garage = VehicleGarage,
-                    state = VehicleState,
-                    fuel = v.fuel,
-                    engine = enginePercent,
-                    body = bodyPercent,
-                    paymentsleft = v.paymentsleft
-                }
-            end
-            Vehicles[#Vehicles+1] = vehdata
-        end
-        cb(Vehicles)
-    else
-        cb(nil)
-    end
-end)
-```
-
-## Step 2 | Open the Renewed phone file and find the fxmanifest.lua file find this code and delete it.
-```lua
-'@qb-garages/config.lua',
-
--- After this process, shared scripts should look like this.
-shared_scripts {
-    'config.lua',
-    '@qb-apartments/config.lua'
-}
-```
