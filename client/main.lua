@@ -420,8 +420,17 @@ function DepositVehicle(veh, data)
 end
 
 function CheckPlayers(vehicle)
+    if not DoesEntityExist(vehicle) then return end
+    for i = -1, GetVehicleMaxNumberOfPassengers(vehicle) - 1 do
+        local ped = GetPedInVehicleSeat(vehicle, i)
+        if ped and ped ~= 0 then
+            TaskLeaveVehicle(ped, vehicle, 16)
+        end
+    end
+    NetworkFadeOutEntity(vehicle, false, false)
+    Wait(50)
     SetEntityAsMissionEntity(vehicle, true, true)
-    DeleteVehicle(vehicle)
+    DeleteEntity(vehicle)
 end
 
 function doCarDamage(currentVehicle, stats, props)
